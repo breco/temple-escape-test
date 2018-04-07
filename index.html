@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.0.0/dist/phaser.min.js"></script>
+</head>
+<body>
+
+<script src= "../src/js/bomb.js"></script>
+<script src= "../src/js/diagonal.js"></script>
+<script src= "../src/js/jumper.js"></script>
+<script src= "../src/js/bridge.js"></script>
+<script>
+
+
+var blocks;
+var player1;
+var player2;
+var targets;
+var targets_attack;
+
+var points;
+var blockeds;
+var decorations;
+var dice;
+var dice2;
+var movesLeft1;
+var movesLeft2;
+var arrow;
+var timer1;
+var timer2;
+var timerText1;
+var timerText2;
+var HUD_P1 = [1000,50];
+var HUD_P2 = [1000,400];
+
+var items;
+var selected_item;
+var itemCounter1 = 0;
+var itemCounter2 = 0;
+var itemText;
+var self;
+var config = {
+    type: Phaser.AUTO,
+    width: 1300,
+    height: 800,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 200 }
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create
+    }
+};
+
+var game = new Phaser.Game(config);
+
+function preload (){
+    
+    this.load.image('background','./src/images/ancient_ruins/background.png');
+    this.load.image('ground_0', './src/images/ancient_ruins/ground_0.png');
+    this.load.image('ground_1', './src/images/ancient_ruins/ground_1.png');
+    this.load.image('border_LU','./src/images/ancient_ruins/borderLU.png');
+    this.load.image('border_U0','./src/images/ancient_ruins/borderU0.png');
+    this.load.image('border_RU','./src/images/ancient_ruins/borderRU.png');
+    this.load.image('border_R0','./src/images/ancient_ruins/borderR0.png');
+    this.load.image('border_RD','./src/images/ancient_ruins/borderRD.png');
+    this.load.image('border_D0','./src/images/ancient_ruins/borderD0.png');
+    this.load.image('border_LD','./src/images/ancient_ruins/borderLD.png');
+    this.load.image('border_L0','./src/images/ancient_ruins/borderL0.png');
+    this.load.image('border_C0','./src/images/ancient_ruins/borderC0.png');
+    this.load.image('border_C1','./src/images/ancient_ruins/borderC1.png');
+    this.load.image('explorer_1','./src/images/explorer_1.png');
+    this.load.image('explorer_2','./src/images/explorer_2.png');
+    this.load.image('target','./src/images/target.png');
+    this.load.image('target-2','./src/images/target-2.png');
+    this.load.image('point-1','./src/images/points/point-1.png');
+    this.load.image('point-2','./src/images/points/point-2.png');
+    this.load.image('point-3','./src/images/points/point-3.png');
+    this.load.image('point-4','./src/images/points/point-4.png');
+    this.load.image('point-5','./src/images/points/point-5.png');
+    this.load.image('blocked','./src/images/ancient_ruins/blocked.png');
+    this.load.image('dice-red-1','./src/images/dice-red/dice-1.png');
+    this.load.image('dice-red-2','./src/images/dice-red/dice-2.png');
+    this.load.image('dice-red-3','./src/images/dice-red/dice-3.png');
+    this.load.image('dice-red-4','./src/images/dice-red/dice-4.png');
+    this.load.image('dice-red-5','./src/images/dice-red/dice-5.png');
+    this.load.image('dice-red-6','./src/images/dice-red/dice-6.png');
+    this.load.image('dice-green-1','./src/images/dice-green/dice-1.png');
+    this.load.image('dice-green-2','./src/images/dice-green/dice-2.png');
+    this.load.image('dice-green-3','./src/images/dice-green/dice-3.png');
+    this.load.image('dice-green-4','./src/images/dice-green/dice-4.png');
+    this.load.image('dice-green-5','./src/images/dice-green/dice-5.png');
+    this.load.image('dice-green-6','./src/images/dice-green/dice-6.png');
+    this.load.image('number-0','./src/images/numbers/0.png');
+    this.load.image('number-1','./src/images/numbers/1.png');
+    this.load.image('number-2','./src/images/numbers/2.png');
+    this.load.image('number-3','./src/images/numbers/3.png');
+    this.load.image('number-4','./src/images/numbers/4.png');
+    this.load.image('number-5','./src/images/numbers/5.png');
+    this.load.image('number-6','./src/images/numbers/6.png');
+    this.load.image('number-bg','./src/images/numbers/number-bg.png');
+    this.load.image('arrow','./src/images/arrow.png');
+    //items
+    this.load.image('club','./src/images/items/club.png');
+    this.load.image('collar','./src/images/items/collar.png');
+    this.load.image('jumper','./src/images/items/jumper.png');
+    this.load.image('bridge','./src/images/items/bridge.png');
+}
+
+function create (){
+
+    self = this;
+    decorations = this.add.group();
+    blocks = this.add.group();
+    targets = this.add.group();
+    targets_attack = this.add.group();
+    points = this.add.group();
+    blockeds = this.add.group();
+    items = this.add.group();
+    
+
+    // set dices & movement stuff
+    let bg = decorations.create(150+78,0,'background').setOrigin(0,0);
+    
+    dice = this.add.sprite(HUD_P1[0]+90,HUD_P1[1],'dice-red-6').setOrigin(0,0);
+    dice.setInteractive();
+    dice.on('pointerdown',function(data){
+        if(arrow.currentTurn === 'player2') return;
+        let roll =  Math.floor((Math.random() * 6) + 1);
+        dice.setTexture('dice-red-'+roll);
+        movesLeft1.setTexture('number-'+roll);
+        movesLeft1.steps = roll;
+
+    });
+    dice2 = this.add.sprite(HUD_P2[0]+90,HUD_P2[1],'dice-green-6').setOrigin(0,0);
+    dice2.setInteractive();
+    dice2.on('pointerdown',function(data){
+        if(arrow.currentTurn === 'player1') return;
+        let roll = Math.floor((Math.random() * 6) + 1);
+        dice2.setTexture('dice-green-'+roll);
+        movesLeft2.setTexture('number-'+roll);
+        movesLeft2.steps = roll;
+    });
+    
+    // set decorations
+    arrow = this.add.sprite(HUD_P1[0]-50,HUD_P1[1]+15,'arrow').setOrigin(0,0);
+    arrow.currentTurn = 'player1';
+    decorations.create(HUD_P1[0]+190,HUD_P1[1],'number-bg').setOrigin(0,0);
+    decorations.create(HUD_P2[0]+190,HUD_P2[1],'number-bg').setOrigin(0,0);
+    movesLeft1 = this.add.sprite(HUD_P1[0]+200,HUD_P1[1]+11,'number-0').setOrigin(0,0);
+    movesLeft2 = this.add.sprite(HUD_P2[0]+200,HUD_P2[1]+11,'number-0').setOrigin(0,0);
+    movesLeft1.steps = 0;
+    movesLeft2.steps = 0;
+    let explorer_1 = decorations.create(HUD_P1[0],HUD_P1[1],'explorer_1').setOrigin(0,0);
+    
+    let explorer_2 = decorations.create(HUD_P2[0],HUD_P2[1],'explorer_2').setOrigin(0,0);
+    explorer_1.setScale(2.5);
+    explorer_2.setScale(2.5);
+    decorations.create(150+78*-1,100+78*-1,'border_LU').setOrigin(0,0);
+    decorations.create(150+78*7,100+78*-1,'border_RU').setOrigin(0,0);
+    decorations.create(150+78*-1,100+78*7,'border_LD').setOrigin(0,0);
+    decorations.create(150+78*7,100+78*7,'border_RD').setOrigin(0,0);
+    for(var i = 0; i <= 6; i++){
+        decorations.create(150+78*i,100+78*-1,'border_U0').setOrigin(0,0);
+        decorations.create(150+78*i,100+78*7,'border_D0').setOrigin(0,0);
+        decorations.create(150+78*-1,100+78*i,'border_L0').setOrigin(0,0);
+        decorations.create(150+78*7,100+78*i,'border_R0').setOrigin(0,0);
+
+    }
+    let c;
+    for(var i = -2; i <= 8; i++){
+        c = Math.floor((Math.random() * 2));
+        decorations.create(150+78*i,100+78*-2,'border_C'+c).setOrigin(0,0);
+        c = Math.floor((Math.random() * 2));
+        decorations.create(150+78*i,100+78*8,'border_C'+c).setOrigin(0,0);
+        c = Math.floor((Math.random() * 2));
+        decorations.create(150+78*-2,100+78*i,'border_C'+c).setOrigin(0,0);
+        c = Math.floor((Math.random() * 2));
+        decorations.create(150+78*8,100+78*i,'border_C'+c).setOrigin(0,0);
+        c = Math.floor((Math.random() * 2));
+        decorations.create(150+78*9,100+78*i,'border_C'+c).setOrigin(0,0);
+    }
+
+    //set blocks
+    let steps = 0;
+    let groundType;
+    let block;
+    for (var i = 0; i < 7; i++){
+        for(var j = 0; j < 7; j++){
+            //steps = Math.floor((Math.random() * 5) + 1);
+            steps = 1;
+            groundType = Math.floor((Math.random() * 2));
+            block = blocks.create(150+78*i,100+78*j,'ground_'+groundType).setOrigin(0,0);
+            block.steps = steps;
+            block.pos_x = i;
+            block.pos_y = j;
+            
+        }
+        
+    }
+    let point;
+    blocks.children.iterate(function (block) {
+        block.setInteractive(); 
+        point = points.create(150+78*block.pos_x,100+78*block.pos_y,'point-'+block.steps).setOrigin(0,0);
+        point.setScale(1.25);
+        
+        block.pointData = point;
+
+        
+    });
+    
+    //PLAYER SPRITES
+    player1 = this.add.sprite(150, 100, 'explorer_1').setOrigin(0,0);
+    player1.setScale(3);
+    player1.setPosition(150,100);
+    player1.pos_x = 0;
+    player1.pos_y = 0;
+    player2 = this.add.sprite(462, 412, 'explorer_2').setOrigin(0,0);
+    player2.setScale(3);
+    player2.setPosition(462,412);
+    player2.pos_x = 4;
+    player2.pos_y = 4;
+
+    player1.setInteractive();
+    player1.on('pointerdown',function(data){
+        if(itemText.active) itemText.destroy();
+        targets.children.iterate(function (target){
+            target.destroy();
+        });
+        targets.children.clear();
+
+        targets_attack.children.iterate(function (target){
+            target.destroy();
+        });
+        targets_attack.children.clear();
+
+        let pos_x = Math.floor((data.event.x-161)/78);
+        let pos_y = Math.floor((data.event.y-111)/78);
+        
+        addTargets(pos_x,pos_y,"player1");    
+        let flag = hasLost("player1");
+        if(flag){
+            alert("JUGADOR 2 GANA LA PARTIDA");
+        }
+
+    });
+    player2.setInteractive();
+    player2.on('pointerdown',function(data){
+        if(itemText.active) itemText.destroy();
+        targets.children.iterate(function (target){
+            target.destroy();
+        });
+        targets.children.clear();
+        targets_attack.children.iterate(function (target){
+            target.destroy();
+        });
+        targets_attack.children.clear();
+        let pos_x = Math.floor((data.event.x-161)/78);
+        let pos_y = Math.floor((data.event.y-111)/78);
+        addTargets(pos_x,pos_y,"player2");
+        let flag = hasLost("player2");
+        if(flag){
+            alert("JUGADOR 1 GANA LA PARTIDA");
+        }
+    });
+
+
+    //HUD TEXTS
+    var config1 = {
+        x: HUD_P1[0]+150,
+        y: HUD_P1[1]-30,
+        text: 'Mov. Restantes',
+        style: {
+            font: '20px Arial',
+            fill: '#ffffff',
+            align: 'center',
+            backgroundColor: '#000000'
+        }
+    };
+
+    this.make.text(config1);
+    itemText = this.make.text({x:-10,y:-10,text:'text'});
+    
+
+    //SET TIME
+    timer1 = 480;
+    timer2 = 480;
+
+    var configTimer1 = {
+        x: HUD_P1[0]+10,
+        y: HUD_P1[1]+60,
+        text: (Math.trunc(timer1 / 60))+":0"+(timer1 % 60),
+        style: {
+            font: '20px Arial',
+            fill: '#ffffff',
+            align: 'center',
+            backgroundColor: '#000000'
+        }
+    };
+
+    var configTimer2 = {
+        x: HUD_P2[0]+10,
+        y: HUD_P2[1]+65,
+        text: (Math.trunc(timer2 / 60))+":0"+(timer2 % 60),
+        style: {
+            font: '20px Arial',
+            fill: '#ffffff',
+            align: 'center',
+            backgroundColor: '#000000'
+        }
+    };
+
+    timerText1 = this.make.text(configTimer1);
+    timerText2 = this.make.text(configTimer2);
+
+    var downloadTimer = setInterval(updateTimer.bind(null,this),1000);
+
+    // SET ITEMS
+
+    
+}
+
+function updateTimer(game){
+
+    if(arrow.currentTurn === 'player1'){
+        timer1--;
+        timerText1.destroy();
+        let seconds = timer1 % 60;
+        if(seconds <= 9) seconds = '0'+seconds;  
+        configTimer1 = {
+            x: HUD_P1[0]+10,
+            y: HUD_P1[1]+60,
+            text: (Math.trunc(timer1 / 60))+":"+seconds,
+            style: {
+                font: '20px Arial',
+                fill: '#ffffff',
+                align: 'center',
+                backgroundColor: '#000000'
+            }
+        };
+        timerText1 = game.make.text(configTimer1);
+    }
+    else if(arrow.currentTurn === 'player2'){
+        timer2--;
+        timerText2.destroy(); 
+        let seconds = timer2 % 60;
+        if(seconds <= 9 || seconds == 0) seconds = '0'+seconds;
+        configTimer2 = {
+            x: HUD_P2[0]+10,
+            y: HUD_P2[1]+65,
+            text: (Math.trunc(timer2 / 60))+":"+seconds,
+            style: {
+                font: '20px Arial',
+                fill: '#ffffff',
+                align: 'center',
+                backgroundColor: '#000000'
+            }
+        };
+        timerText2 = game.make.text(configTimer2);
+    }
+}
+
+function validTarget(pos_x,pos_y,player){
+    //console.log(pos_x,pos_y,player);
+    if(player === 'player1'){
+        if(movesLeft1.steps <= 0) return false;
+    }
+    if(player === 'player2'){
+        if(movesLeft2.steps <= 0) return false;   
+    }
+    let flag = false;
+    let flag2 = true;
+    if(pos_x >= 0 && pos_x <= 6 && pos_y >= 0 && pos_y <= 6){
+        if(player === 'player1'){
+            if(player2.pos_x == pos_x && player2.pos_y == pos_y){
+                return false;
+            }
+            flag = true;
+        }
+        else if(player === 'player2'){
+            if(player1.pos_x == pos_x && player1.pos_y == pos_y){
+                return false;
+            }
+            flag = true;
+        }
+    }
+    if(flag){
+        blocks.children.iterate(function (block){
+            if(block.pos_x == pos_x && block.pos_y == pos_y){
+                if(block.steps <= 0){
+                    flag2 = false;
+                }
+            }
+        });
+        
+        return flag2;
+    }
+    return false;
+}
+
+function addItem(){
+    let nombre = createItem();
+    let item = items.create(800,400,nombre).setOrigin(0,0);
+    item.nombre = nombre;
+    if(arrow.currentTurn == "player1"){
+        item.setPosition(HUD_P1[0]+20+(itemCounter1%4)*60,HUD_P1[1]+100+Math.trunc(itemCounter1/4)*60);
+        item.position = itemCounter1;
+        item.player = "player1";
+        itemCounter1++;
+        
+    }
+    else if(arrow.currentTurn == "player2"){
+        item.setPosition(HUD_P2[0]+20+(itemCounter2%4)*60,HUD_P2[1]+100+Math.trunc(itemCounter2/4)*60);
+        item.position = itemCounter2;
+        item.player = "player2";
+        itemCounter2++;
+        
+    }
+    item.setInteractive();
+    item.on('pointerdown',function(){
+        let item;
+        selected_item = this;
+        if(arrow.currentTurn == "player1"){
+            item = getItem(player1,selected_item);
+        }
+        else if(arrow.currentTurn == "player2"){
+            
+            item = getItem(player2,selected_item);
+        }
+        item.addTargets();
+        showItemText(item.config);
+    });
+} 
+
+function showItemText(config){
+    console.log(self);
+    console.log(config);
+    itemText = self.make.text(config);
+}
+function createItem(){
+    let p = Math.floor((Math.random() * 100) + 1);
+    if(p<=33){
+        return "collar";
+    }
+    else if(p<=66){
+        return "club";
+    }
+    else{
+        return "jumper";
+    }
+}
+function getItem(player,item){
+    
+    if(item.nombre == "collar"){
+        return new Diagonal(player,item);
+    }
+    else if(item.nombre == "club"){
+        return new Bomb(player,item);
+    }
+    else if(item.nombre == "jumper"){
+        return new Jumper(player,item);
+    }
+    else if(item.nombre == "bridge"){
+        return new Bridge(player,item);
+    }
+    console.log(item.name);
+}   
+function removeItem(player){
+
+    let position = selected_item.position;
+    selected_item.destroy();
+    
+    if(player == "player1"){
+        itemCounter1--;
+        items.children.iterate(function(item){
+            if(item.position <= position) return;
+            if(item.player == "player1"){
+                item.position--;
+                item.setPosition(HUD_P1[0]+20+(item.position%4)*60,HUD_P1[1]+100+Math.trunc(item.position/4)*60);
+            }   
+        });
+    }
+    else if(player == "player2"){
+        itemCounter2--;
+        items.children.iterate(function(item){
+            if(item.position <= position) return;
+            if(item.player == "player2"){
+                item.position--;
+                item.setPosition(HUD_P2[0]+20+(item.position%4)*60,HUD_P2[1]+100+Math.trunc(item.position/4)*60);
+            }
+        });
+    }
+    itemText.destroy();
+    
+    
+
+    
+    
+}
+function getBlock(pos_x,pos_y){
+    let final_block;
+    blocks.children.iterate(function(block){
+        if(block.pos_x == pos_x && block.pos_y == pos_y){
+            final_block = block;
+            return;
+        }
+    });
+    return final_block;
+}
+function reduceBlock(pos_x, pos_y, eliminar = false){
+    blocks.children.iterate(function(block){
+        if(block.pos_x == pos_x && block.pos_y == pos_y){
+            if(eliminar){
+                block.steps = 0;
+            }
+            else{
+                block.steps -=1;
+                
+            }
+            if(block.steps <= 0){
+                console.log("adding blocked");
+                let blocked;
+                blocked = blockeds.create(150+78*block.pos_x,100+78*block.pos_y,'blocked').setOrigin(0,0);
+                blocked.pos_x = block.pos_x;
+                blocked.pos_y = blocked.pos_y;
+                if(!eliminar){
+                    addItem();
+                }
+            }
+            else{
+                block.pointData.setTexture('point-'+block.steps);
+            }
+            
+            
+        }
+    });
+}
+function reduceMovesLeft(player){
+    if(player === 'player1'){
+        movesLeft1.steps -= 1;
+        if(movesLeft1.steps <= 0){
+            movesLeft1.steps = 0;
+            arrow.currentTurn = 'player2';
+            arrow.setPosition(HUD_P2[0]-50,HUD_P2[1]+15);
+        }
+        
+        movesLeft1.setTexture('number-'+movesLeft1.steps);
+    }
+    else if(player === 'player2'){
+        movesLeft2.steps -= 1;
+        if(movesLeft2.steps <= 0){
+            movesLeft2.steps = 0;
+            arrow.setPosition(HUD_P1[0]-50,HUD_P1[1]+15);
+            arrow.currentTurn = 'player1';
+        }
+        movesLeft2.setTexture('number-'+movesLeft2.steps);
+    }
+}
+function setTargetInterative(target){
+    target.setInteractive();
+    target.on('pointerdown',function(data){
+        
+        if(target.player === 'player1'){
+            player1.setPosition(150+78*target.pos_x,100+78*target.pos_y);
+            reduceBlock(player1.pos_x,player1.pos_y);
+            player1.pos_x = target.pos_x;
+            player1.pos_y = target.pos_y;
+            reduceMovesLeft(target.player);
+
+        }
+        else if(target.player === 'player2'){
+            player2.setPosition(150+78*target.pos_x,100+78*target.pos_y);
+            reduceBlock(player2.pos_x,player2.pos_y);
+            player2.pos_x = target.pos_x;
+            player2.pos_y = target.pos_y;
+            reduceMovesLeft(target.player);
+        }
+        destroyTargets(targets);
+    });
+
+}
+
+function destroyTargets(targets){
+    targets.children.iterate(function (target){
+        target.destroy();
+    });
+    targets.children.clear();
+}
+function addTargets(pos_x,pos_y,player){
+    let target;
+    if(validTarget(pos_x+1,pos_y,player)){
+        target = targets.create(150+78*(pos_x+1),100+78*(pos_y),'target').setOrigin(0,0);
+        target.setScale(1.25);
+        target.player = player;
+        target.pos_x = pos_x +1;
+        target.pos_y = pos_y;
+        setTargetInterative(target);
+    }
+    if(validTarget(pos_x-1,pos_y,player)){
+        target = targets.create(150+78*(pos_x-1),100+78*(pos_y),'target').setOrigin(0,0);
+        target.setScale(1.25);
+        target.player = player;
+        target.pos_x = pos_x - 1;
+        target.pos_y = pos_y;
+        setTargetInterative(target);
+    }
+    if(validTarget(pos_x,pos_y+1,player)){
+        target = targets.create(150+78*(pos_x),100+78*(pos_y+1),'target').setOrigin(0,0);
+        target.setScale(1.25);
+        target.player = player;
+        target.pos_x = pos_x;
+        target.pos_y = pos_y + 1;
+        setTargetInterative(target);
+    }
+    if(validTarget(pos_x,pos_y-1,player)){
+        target = targets.create(150+78*(pos_x),100+78*(pos_y-1),'target').setOrigin(0,0);
+        target.setScale(1.25);
+        target.player = player;
+        target.pos_x = pos_x;
+        target.pos_y = pos_y - 1;
+        setTargetInterative(target);
+    }
+    
+}
+
+
+function checkItemUtility(player,item){
+    
+    if (item.nombre == "club") return;
+    console.log(player);
+    if(player == "player1"){
+        item = getItem(player1,item);
+    }
+    else if(player == "player2"){
+        item = getItem(player2,item);
+    }
+    item.addTargets();
+    console.log("targets_attack.children.getArray().length="+targets_attack.children.getArray().length);
+    if (targets_attack.children.getArray().length > 0){
+        targets_attack.children.iterate(function (target){
+            target.destroy();
+        });
+        targets_attack.children.clear();
+        console.log("item es util");
+        return true;
+    }
+    console.log("item es inutil");
+    return false;
+}
+
+function hasLost(player){
+    // true if player has lost
+    //false if player still plays
+    let items_helper = []
+    if(player === "player1"){
+        console.log("movesLeft1="+movesLeft1.steps);
+        console.log("targets.children.size="+targets.children.size);
+        if(movesLeft1.steps > 0 && targets.children.size == 0){
+            items.children.iterate(function(item){
+                if(item.player === "player1"){
+                    items_helper.push(item);
+                }
+            })
+            if(items_helper.length == 0){
+                return true;
+            }
+            else{
+                console.log("items_helper.length="+items_helper.length);
+                for(i=0;i<items_helper.length;i++){
+                    if (checkItemUtility("player1",items_helper[i])){
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        else{
+            return false;
+        }
+
+    }
+    else if(player === "player2"){
+        if(movesLeft2.steps > 0 && targets.children.size == 0){
+            items.children.iterate(function(item){
+                if(item.player === "player2"){
+                    items_helper.push(item);
+                }
+            })
+            if(items_helper.length == 0){
+                return true;
+            }
+            else{
+                console.log("items_helper.length="+items_helper.length);
+                for(i=0;i<items_helper.length;i++){
+                    if (checkItemUtility("player2",items_helper[i])){
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        else{
+            return false;
+        }
+    }
+}
+</script>
+
+</body>
+</html>
