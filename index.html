@@ -13,6 +13,7 @@
 
 
 var blocks;
+var players;
 var player1;
 var player2;
 var targets;
@@ -58,7 +59,7 @@ var config = {
 var game = new Phaser.Game(config);
 
 function preload (){
-    
+    this.load.image('bridge_block','./src/images/bridge.png');
     this.load.image('background','./src/images/ancient_ruins/background.png');
     this.load.image('ground_0', './src/images/ancient_ruins/ground_0.png');
     this.load.image('ground_1', './src/images/ancient_ruins/ground_1.png');
@@ -103,11 +104,13 @@ function preload (){
     this.load.image('number-6','./src/images/numbers/6.png');
     this.load.image('number-bg','./src/images/numbers/number-bg.png');
     this.load.image('arrow','./src/images/arrow.png');
+    
     //items
     this.load.image('club','./src/images/items/club.png');
     this.load.image('collar','./src/images/items/collar.png');
     this.load.image('jumper','./src/images/items/jumper.png');
     this.load.image('bridge','./src/images/items/bridge.png');
+
 }
 
 function create (){
@@ -115,12 +118,13 @@ function create (){
     self = this;
     decorations = this.add.group();
     blocks = this.add.group();
+    
     targets = this.add.group();
     targets_attack = this.add.group();
     points = this.add.group();
     blockeds = this.add.group();
     items = this.add.group();
-    
+    players = this.add.group();
 
     // set dices & movement stuff
     let bg = decorations.create(150+78,0,'background').setOrigin(0,0);
@@ -213,12 +217,12 @@ function create (){
     });
     
     //PLAYER SPRITES
-    player1 = this.add.sprite(150, 100, 'explorer_1').setOrigin(0,0);
+    player1 = players.create(150, 100, 'explorer_1').setOrigin(0,0);
     player1.setScale(3);
     player1.setPosition(150,100);
     player1.pos_x = 0;
     player1.pos_y = 0;
-    player2 = this.add.sprite(462, 412, 'explorer_2').setOrigin(0,0);
+    player2 = players.create(462, 412, 'explorer_2').setOrigin(0,0);
     player2.setScale(3);
     player2.setPosition(462,412);
     player2.pos_x = 4;
@@ -389,6 +393,7 @@ function validTarget(pos_x,pos_y,player){
     }
     if(flag){
         blocks.children.iterate(function (block){
+
             if(block.pos_x == pos_x && block.pos_y == pos_y){
                 if(block.steps <= 0){
                     flag2 = false;
@@ -442,8 +447,9 @@ function showItemText(config){
 }
 function createItem(){
     let p = Math.floor((Math.random() * 100) + 1);
+    //return "bridge";
     if(p<=33){
-        return "collar";
+        return "bridge";
     }
     else if(p<=66){
         return "club";
@@ -510,9 +516,20 @@ function getBlock(pos_x,pos_y){
     });
     return final_block;
 }
+function getBlocked(pos_x,pos_y){
+    let final_block;
+    blockeds.children.iterate(function(block){
+        if(block.pos_x == pos_x && block.pos_y == pos_y){
+            final_block = block;
+            return;
+        }
+    });
+    return final_block;    
+}
 function reduceBlock(pos_x, pos_y, eliminar = false){
     blocks.children.iterate(function(block){
         if(block.pos_x == pos_x && block.pos_y == pos_y){
+            console.log("steps a disminuir: "+block.steps);
             if(eliminar){
                 block.steps = 0;
             }
@@ -525,18 +542,42 @@ function reduceBlock(pos_x, pos_y, eliminar = false){
                 let blocked;
                 blocked = blockeds.create(150+78*block.pos_x,100+78*block.pos_y,'blocked').setOrigin(0,0);
                 blocked.pos_x = block.pos_x;
-                blocked.pos_y = blocked.pos_y;
+                blocked.pos_y = block.pos_y;
                 if(!eliminar){
                     addItem();
                 }
             }
             else{
-                block.pointData.setTexture('point-'+block.steps);
+                console.log("block.steps="+block.steps);
+                console.log(block.pointData);
+                if(block.tipo !== "bridge"){
+                    block.pointData.setTexture('point-'+block.steps);
+                }
+            
+            
             }
-            
-            
         }
     });
+}
+function clearBridges(){
+    blocks.children.iterate(function (block){
+        if(block.tipo === "bridge"){
+            
+            
+            
+            let blocked;
+            let x = block.pos_x;
+            let y = block.pos_y;
+            let pointData = block.pointData;
+            let block2 = blocks.create(150+78*x,100+78*y,'ground_0').setOrigin(0,0);
+            block2.pos_x = x;
+            block2.pos_y = y;
+            block2.steps = 1;
+            block2.pointData = pointData;
+            reduceBlock(block2.pos_x,block2.pos_y,true);
+
+        }
+    })
 }
 function reduceMovesLeft(player){
     if(player === 'player1'){
@@ -545,6 +586,7 @@ function reduceMovesLeft(player){
             movesLeft1.steps = 0;
             arrow.currentTurn = 'player2';
             arrow.setPosition(HUD_P2[0]-50,HUD_P2[1]+15);
+            clearBridges();
         }
         
         movesLeft1.setTexture('number-'+movesLeft1.steps);
@@ -555,6 +597,7 @@ function reduceMovesLeft(player){
             movesLeft2.steps = 0;
             arrow.setPosition(HUD_P1[0]-50,HUD_P1[1]+15);
             arrow.currentTurn = 'player1';
+            clearBridges();
         }
         movesLeft2.setTexture('number-'+movesLeft2.steps);
     }
@@ -629,7 +672,7 @@ function addTargets(pos_x,pos_y,player){
 
 function checkItemUtility(player,item){
     
-    if (item.nombre == "club") return;
+    if (item.nombre == "club" || item.nombre == "bridge") return;
     console.log(player);
     if(player == "player1"){
         item = getItem(player1,item);
