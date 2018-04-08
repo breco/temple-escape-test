@@ -39,24 +39,15 @@ class Bridge {
   }
   effect(target){
 
-  	console.log("place bridge at: "+target.pos_x+","+target.pos_y);
     let block = getBlock(target.pos_x,target.pos_y);
     let blocked = getBlocked(target.pos_x,target.pos_y);
-    console.log(block);
     block.steps = 5;
     blocked.destroy();
     block.setTexture('bridge_block');
     block.setScale(1.1);    
     block.pointData.destroy();
-    //let block_new = blocks.create(150+78*target.pos_x,100+78*target.pos_y,'bridge_block').setOrigin(0,0);
-    //console.log(block_new);
-    //block_new.steps = 6;
-    //block_new.pos_x = target.pos_x;
-    //block_new.pos_y = target.pos_y;
-    //block_new.pointData = block.pointData;
+    
     block.tipo = "bridge";
-    //blocks.remove(block);
-    //block.destroy();
     targets_attack.children.iterate(function (target){
         target.destroy();
     });

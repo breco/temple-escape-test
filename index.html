@@ -6,9 +6,10 @@
 <body>
 
 <script src= "../src/js/bomb.js"></script>
-<script src= "../src/js/diagonal.js"></script>
+<script src= "../src/js/rope.js"></script>
 <script src= "../src/js/jumper.js"></script>
 <script src= "../src/js/bridge.js"></script>
+<script src= "../src/js/dynamite.js"></script>
 <script>
 
 
@@ -106,10 +107,11 @@ function preload (){
     this.load.image('arrow','./src/images/arrow.png');
     
     //items
-    this.load.image('club','./src/images/items/club.png');
-    this.load.image('collar','./src/images/items/collar.png');
+    this.load.image('bomb','./src/images/items/bomb.png');
+    this.load.image('rope','./src/images/items/rope.png');
     this.load.image('jumper','./src/images/items/jumper.png');
     this.load.image('bridge','./src/images/items/bridge.png');
+    this.load.image('dynamite','./src/images/items/dynamite.png');
 
 }
 
@@ -194,8 +196,8 @@ function create (){
     let block;
     for (var i = 0; i < 7; i++){
         for(var j = 0; j < 7; j++){
-            //steps = Math.floor((Math.random() * 5) + 1);
-            steps = 1;
+            steps = Math.floor((Math.random() * 5) + 1);
+            //steps = 1;
             groundType = Math.floor((Math.random() * 2));
             block = blocks.create(150+78*i,100+78*j,'ground_'+groundType).setOrigin(0,0);
             block.steps = steps;
@@ -222,11 +224,11 @@ function create (){
     player1.setPosition(150,100);
     player1.pos_x = 0;
     player1.pos_y = 0;
-    player2 = players.create(462, 412, 'explorer_2').setOrigin(0,0);
+    player2 = players.create(150+78*6, 100+78*6, 'explorer_2').setOrigin(0,0);
     player2.setScale(3);
-    player2.setPosition(462,412);
-    player2.pos_x = 4;
-    player2.pos_y = 4;
+    player2.setPosition(150+78*6,100+78*6);
+    player2.pos_x = 6;
+    player2.pos_y = 6;
 
     player1.setInteractive();
     player1.on('pointerdown',function(data){
@@ -368,7 +370,6 @@ function updateTimer(game){
 }
 
 function validTarget(pos_x,pos_y,player){
-    //console.log(pos_x,pos_y,player);
     if(player === 'player1'){
         if(movesLeft1.steps <= 0) return false;
     }
@@ -441,29 +442,33 @@ function addItem(){
 } 
 
 function showItemText(config){
-    console.log(self);
-    console.log(config);
     itemText = self.make.text(config);
 }
 function createItem(){
     let p = Math.floor((Math.random() * 100) + 1);
-    //return "bridge";
-    if(p<=33){
-        return "bridge";
+    console.log(p);
+    if(p<=5){
+        return "dynamite";
     }
-    else if(p<=66){
-        return "club";
+    if(p<=29){
+        return "jumper";
+    }
+    else if(p<=53){
+        return "bomb";
+    }
+    else if(p<=77){
+        return "rope";
     }
     else{
-        return "jumper";
+        return "bridge";
     }
 }
 function getItem(player,item){
     
-    if(item.nombre == "collar"){
-        return new Diagonal(player,item);
+    if(item.nombre == "rope"){
+        return new Rope(player,item);
     }
-    else if(item.nombre == "club"){
+    else if(item.nombre == "bomb"){
         return new Bomb(player,item);
     }
     else if(item.nombre == "jumper"){
@@ -472,7 +477,9 @@ function getItem(player,item){
     else if(item.nombre == "bridge"){
         return new Bridge(player,item);
     }
-    console.log(item.name);
+    else if(item.nombre == "dynamite"){
+        return new Dynamite(player,item);
+    }
 }   
 function removeItem(player){
 
@@ -529,7 +536,6 @@ function getBlocked(pos_x,pos_y){
 function reduceBlock(pos_x, pos_y, eliminar = false){
     blocks.children.iterate(function(block){
         if(block.pos_x == pos_x && block.pos_y == pos_y){
-            console.log("steps a disminuir: "+block.steps);
             if(eliminar){
                 block.steps = 0;
             }
@@ -538,7 +544,6 @@ function reduceBlock(pos_x, pos_y, eliminar = false){
                 
             }
             if(block.steps <= 0){
-                console.log("adding blocked");
                 let blocked;
                 blocked = blockeds.create(150+78*block.pos_x,100+78*block.pos_y,'blocked').setOrigin(0,0);
                 blocked.pos_x = block.pos_x;
@@ -548,8 +553,6 @@ function reduceBlock(pos_x, pos_y, eliminar = false){
                 }
             }
             else{
-                console.log("block.steps="+block.steps);
-                console.log(block.pointData);
                 if(block.tipo !== "bridge"){
                     block.pointData.setTexture('point-'+block.steps);
                 }
@@ -672,8 +675,7 @@ function addTargets(pos_x,pos_y,player){
 
 function checkItemUtility(player,item){
     
-    if (item.nombre == "club" || item.nombre == "bridge") return;
-    console.log(player);
+    if (item.nombre == "bomb" || item.nombre == "bridge") return;
     if(player == "player1"){
         item = getItem(player1,item);
     }
@@ -681,16 +683,13 @@ function checkItemUtility(player,item){
         item = getItem(player2,item);
     }
     item.addTargets();
-    console.log("targets_attack.children.getArray().length="+targets_attack.children.getArray().length);
     if (targets_attack.children.getArray().length > 0){
         targets_attack.children.iterate(function (target){
             target.destroy();
         });
         targets_attack.children.clear();
-        console.log("item es util");
         return true;
     }
-    console.log("item es inutil");
     return false;
 }
 
@@ -699,8 +698,6 @@ function hasLost(player){
     //false if player still plays
     let items_helper = []
     if(player === "player1"){
-        console.log("movesLeft1="+movesLeft1.steps);
-        console.log("targets.children.size="+targets.children.size);
         if(movesLeft1.steps > 0 && targets.children.size == 0){
             items.children.iterate(function(item){
                 if(item.player === "player1"){
@@ -711,7 +708,6 @@ function hasLost(player){
                 return true;
             }
             else{
-                console.log("items_helper.length="+items_helper.length);
                 for(i=0;i<items_helper.length;i++){
                     if (checkItemUtility("player1",items_helper[i])){
                         return false;
@@ -736,7 +732,6 @@ function hasLost(player){
                 return true;
             }
             else{
-                console.log("items_helper.length="+items_helper.length);
                 for(i=0;i<items_helper.length;i++){
                     if (checkItemUtility("player2",items_helper[i])){
                         return false;

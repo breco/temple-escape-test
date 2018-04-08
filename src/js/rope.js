@@ -1,4 +1,4 @@
-class Diagonal{
+class Rope{
 	constructor(player,item){
 		this.player = player;
 		this.item = item;
@@ -49,8 +49,7 @@ class Diagonal{
 	    	target.pos_y = this.player.pos_y-1;
 	    	this.setTargetInteractive(target);
 		}
-		console.log("diagonal working");
-		console.log("targets_attack.children.getArray().length="+targets_attack.children.getArray().length);
+
 	}
 	setTargetInteractive(target){
 		target.setInteractive();
